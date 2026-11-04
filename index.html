@@ -2,71 +2,753 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bronco Car Mining</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body class="bg-gray-950 text-white font-sans pb-20">
-
-    <!-- Header -->
-    <div class="flex justify-between items-center p-4 border-b border-gray-800">
-        <h1 class="text-xl font-bold flex items-center gap-2">🚗 BRONCO</h1>
-        <div class="flex gap-2">
-            <span class="bg-gray-800 px-3 py-1 rounded-full text-sm">EN</span>
-        </div>
-    </div>
-
-    <!-- Balance Card -->
-    <div class="p-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
-            <p class="text-gray-400 text-sm">YOUR BALANCE</p>
-            <h2 class="text-3xl font-extrabold mt-1">$<span id="balance">0.00</span> <span class="text-sm font-normal text-gray-400">USD</span></h2>
-            <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
-                <span class="text-xs text-gray-400">⚡ $0.15 / day</span>
-                <button onclick="collectEarnings()" class="bg-blue-600 hover:bg-blue-500 text-xs px-4 py-2 rounded-xl font-medium">Collect all</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Car Collection List -->
-    <div class="px-4">
-        <h3 class="text-lg font-bold mb-3">Car collection</h3>
-        <div class="grid grid-cols-2 gap-4">
-            <!-- Item 1 -->
-            <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl">
-                <span class="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-gray-300">Common</span>
-                <h4 class="font-bold mt-2 text-sm">Terragon</h4>
-                <p class="text-xs text-gray-400 mt-1">Income: $0.15/d</p>
-                <p class="text-sm font-bold mt-2">$1.00</p>
-                <button class="w-full mt-3 bg-blue-600 hover:bg-blue-500 text-xs py-2 rounded-lg font-medium">Activate</button>
-            </div>
-            <!-- Item 2 -->
-            <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl">
-                <span class="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-gray-300">Common</span>
-                <h4 class="font-bold mt-2 text-sm">Verdant</h4>
-                <p class="text-xs text-gray-400 mt-1">Income: $1.00/d</p>
-                <p class="text-sm font-bold mt-2">$3.00</p>
-                <button class="w-full mt-3 bg-blue-600 hover:bg-blue-500 text-xs py-2 rounded-lg font-medium">Activate</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation Bar -->
-    <div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex justify-around p-3 text-xs">
-        <button class="flex flex-col items-center text-blue-400">🚗 Miners</button>
-        <button class="flex flex-col items-center text-gray-400">📋 Tasks</button>
-        <button class="flex flex-col items-center text-gray-400">👛 Wallet</button>
-        <button class="flex flex-col items-center text-gray-400">👥 Friends</button>
-    </div>
-
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Telegram Web App Initialization
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#f4f7fb',
+                            card: '#ffffff',
+                            primary: '#0284c7',
+                            accent: '#22c55e',
+                            text: '#0f172a',
+                            subtext: '#64748b',
+                            border: '#e2e8f0',
+                            navBg: '#edf4f8',
+                            navActive: '#dbeafe'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7fb;
+            color: #0f172a;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Custom scrollbar for horizontal sub-navs if needed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between max-w-md mx-auto bg-slate-50 relative pb-24 shadow-2xl">
 
-        function collectEarnings() {
-            alert("Earnings collected successfully!");
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
+        <span id="toast-message">Action successful!</span>
+    </div>
+
+    <!-- MAIN APP CONTENT AREA -->
+    <main class="flex-1 w-full overflow-y-auto">
+
+        <!-- HEADER (Shared across screens) -->
+        <header class="p-4 flex justify-between items-center bg-transparent">
+            <div class="flex items-center gap-2">
+                <i data-lucide="car" class="w-6 h-6 text-slate-800"></i>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">BRONCO</h1>
+                    <p class="text-[10px] tracking-widest text-slate-500 font-semibold uppercase">Car Mining</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="showToast('Language set to English')" class="border border-slate-200 bg-white rounded-full px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm active:scale-95 transition">EN</button>
+                <button onclick="openWalletModal()" class="border border-slate-200 bg-white p-2 rounded-full text-slate-600 shadow-sm active:scale-95 transition">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ================= TAB 1: MINERS (HOME) ================= -->
+        <section id="tab-miners" class="px-4 space-y-5">
+            <!-- Balance Card -->
+            <div class="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Balance</p>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span class="text-3xl font-extrabold text-slate-900">$<span id="user-balance">0.00</span></span>
+                            <span class="text-xs font-bold text-slate-400">USD</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <i data-lucide="wallet" class="w-7 h-7 text-slate-700"></i>
+                    </div>
+                </div>
+
+                <hr class="my-4 border-slate-100" />
+
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
+                        <i data-lucide="coins" class="w-4 h-4 text-amber-500"></i>
+                        <span>$<span id="daily-rate-display">0.15</span> / day</span>
+                    </div>
+                    <button onclick="collectMining()" class="border border-slate-300 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 text-xs font-bold px-4 py-2 rounded-full transition flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="rotate-cw" id="collect-icon" class="w-3.5 h-3.5"></i>
+                        Collect all (<span id="unclaimed-amount">$0.0000</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Overview Card -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 mb-3">Car collection</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Active Miners</p>
+                        <p id="stat-active-miners" class="text-xl font-extrabold text-blue-700 mt-1">1</p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Total Packages</p>
+                        <p id="stat-total-packages" class="text-xl font-extrabold text-blue-700 mt-1">10</p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Daily Income</p>
+                        <p class="text-xl font-extrabold text-blue-700 mt-1">$<span id="stat-daily-income">0.15</span></p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-xs text-slate-500 font-medium">Total Mined</p>
+                        <p class="text-xl font-extrabold text-blue-700 mt-1">$<span id="stat-total-mined">0.9848</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Car Marketplace List -->
+            <div class="space-y-3 pb-4">
+                <div id="car-list" class="grid grid-cols-2 gap-3">
+                    <!-- Dynamic Cars Rendered by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: TASKS ================= -->
+        <section id="tab-tasks" class="px-4 space-y-4 hidden">
+            <div class="flex items-center gap-1 text-xs text-slate-400 font-bold uppercase tracking-wider">
+                <i data-lucide="list-checks" class="w-3.5 h-3.5"></i> BRONCO / REWARDS
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-900">Task hub</h1>
+
+            <!-- Task Counter Bar -->
+            <div class="bg-white border border-slate-100 rounded-2xl p-4 flex justify-around text-center shadow-sm">
+                <div>
+                    <p id="task-avail-count" class="text-lg font-bold text-slate-800">4</p>
+                    <p class="text-xs text-slate-400 font-medium">Available</p>
+                </div>
+                <div class="border-r border-slate-100"></div>
+                <div>
+                    <p id="task-review-count" class="text-lg font-bold text-slate-800">0</p>
+                    <p class="text-xs text-slate-400 font-medium">In review</p>
+                </div>
+                <div class="border-r border-slate-100"></div>
+                <div>
+                    <p id="task-done-count" class="text-lg font-bold text-slate-800">0</p>
+                    <p class="text-xs text-slate-400 font-medium">Completed</p>
+                </div>
+            </div>
+
+            <!-- Campaign accordion toggle -->
+            <button onclick="showToast('Campaign Creation opening soon')" class="w-full text-left font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-slate-800"></i> Create a campaign
+            </button>
+
+            <!-- Task Category Pills -->
+            <div class="flex gap-2 border-b border-slate-200 pb-2">
+                <button onclick="switchTaskFilter('all')" id="task-filter-all" class="px-4 py-1.5 rounded-full text-xs font-bold bg-white text-blue-700 border border-blue-600 shadow-sm">Available</button>
+                <button onclick="switchTaskFilter('review')" id="task-filter-review" class="px-4 py-1.5 rounded-full text-xs font-bold text-slate-500 hover:bg-slate-100">In review</button>
+                <button onclick="switchTaskFilter('done')" id="task-filter-done" class="px-4 py-1.5 rounded-full text-xs font-bold text-slate-500 hover:bg-slate-100">Completed</button>
+            </div>
+
+            <!-- Task List Container -->
+            <div id="task-list" class="space-y-3">
+                <!-- Task items dynamically rendered -->
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: WALLET ================= -->
+        <section id="tab-wallet" class="px-4 space-y-4 hidden">
+            <div class="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-5">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-100 p-2.5 rounded-xl text-emerald-600">
+                        <i data-lucide="wallet" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight uppercase">Wallet</h2>
+                        <p class="text-xs text-slate-500">Your Bronco car garage treasury</p>
+                    </div>
+                </div>
+
+                <!-- Balance Display -->
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Available in Balance</p>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-3xl font-extrabold text-emerald-950">$<span id="wallet-balance-disp">0.00</span></span>
+                        <span class="text-xs font-bold text-emerald-700">USD</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-3 text-[11px] text-emerald-800 font-medium">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span>Funds are tied to your account</span>
+                    </div>
+                </div>
+
+                <!-- Top up & Withdraw action buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="openTopUpModal()" class="bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200 rounded-2xl p-4 text-left active:scale-98 transition group">
+                        <div class="flex justify-between items-center mb-2">
+                            <i data-lucide="arrow-down-left" class="w-6 h-6 text-emerald-700"></i>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        </div>
+                        <p class="font-extrabold text-slate-900 text-sm">Top up</p>
+                        <p class="text-[11px] text-slate-500 font-medium">With crypto</p>
+                    </button>
+
+                    <button onclick="openWithdrawModal()" class="bg-sky-50 hover:bg-sky-100/70 border border-sky-200 rounded-2xl p-4 text-left active:scale-98 transition group">
+                        <div class="flex justify-between items-center mb-2">
+                            <i data-lucide="arrow-up-right" class="w-6 h-6 text-sky-700"></i>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-sky-600"></i>
+                        </div>
+                        <p class="font-extrabold text-slate-900 text-sm">Withdraw</p>
+                        <p class="text-[11px] text-slate-500 font-medium">To your own wallet</p>
+                    </button>
+                </div>
+
+                <!-- Warning Notice -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">Check before you transfer</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">Before transferring, check the currency, network, and address. They must match.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: FRIENDS (REFERRAL) ================= -->
+        <section id="tab-friends" class="px-4 space-y-4 hidden">
+            <div class="flex items-center gap-1 text-xs text-slate-400 font-bold uppercase tracking-wider">
+                <i data-lucide="users" class="w-3.5 h-3.5"></i> BRONCO / YOUR CIRCLE
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-900">Invite & earn</h1>
+            <p class="text-xs text-slate-500 -mt-2">Commission on every approved friend deposit</p>
+
+            <div class="text-4xl font-black text-slate-900">15%</div>
+            <p class="text-xs text-slate-500 font-medium">Friend deposits $1 · You earn $0.15</p>
+
+            <hr class="border-slate-200" />
+
+            <!-- Referral Statistics Grid -->
+            <div class="grid grid-cols-3 gap-2 text-center py-2">
+                <div>
+                    <p id="ref-invited-count" class="text-xl font-bold text-slate-900">2</p>
+                    <p class="text-xs text-slate-400 font-medium">Invited</p>
+                </div>
+                <div class="border-x border-slate-200">
+                    <p id="ref-qualified-count" class="text-xl font-bold text-slate-900">2</p>
+                    <p class="text-xs text-slate-400 font-medium">Qualified</p>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-slate-900">$<span id="ref-earned-amount">0.020</span></p>
+                    <p class="text-xs text-slate-400 font-medium">Earned</p>
+                </div>
+            </div>
+
+            <!-- Invite Code & Link Box -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
+                <p class="text-xs text-slate-400 font-medium">Your invitation code</p>
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-black tracking-wider text-slate-800" id="invite-code">BRA54C7300</span>
+                    <button onclick="copyToClipboard('BRA54C7300')" class="border border-blue-600 rounded-full p-2 text-blue-600 hover:bg-blue-50 active:scale-90 transition">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate">https://t.me/Broncochris_bot?startapp=BRA54C7300</p>
+                
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                    <button onclick="showToast('Opening Telegram Share...')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition">
+                        <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share on Telegram
+                    </button>
+                    <button onclick="copyToClipboard('https://t.me/Broncochris_bot?startapp=BRA54C7300')" class="bg-white hover:bg-slate-50 border border-blue-600 text-blue-700 text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy link
+                    </button>
+                </div>
+            </div>
+
+            <!-- Steps Instructions -->
+            <div class="space-y-2 text-xs text-slate-600">
+                <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 flex-shrink-0">1</span>
+                    <span>Friend joins using your invitation</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 flex-shrink-0">2</span>
+                    <span>Your friend's deposit is approved</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 flex-shrink-0">3</span>
+                    <span>15% of every approved deposit goes to your withdrawable earnings</span>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-slate-400 italic">Plus $0.010 when your friend activates their first car miner.</p>
+
+            <!-- Your Circle Friends List -->
+            <div>
+                <h3 class="text-base font-bold text-slate-900 mb-2">Your circle</h3>
+                <div class="flex gap-2 mb-3">
+                    <button class="px-3 py-1 rounded-full text-xs font-bold border border-blue-600 bg-white text-blue-700 shadow-sm">Everyone</button>
+                    <button class="px-3 py-1 rounded-full text-xs font-bold text-slate-400">Qualified</button>
+                    <button class="px-3 py-1 rounded-full text-xs font-bold text-slate-400">Waiting</button>
+                </div>
+
+                <div class="bg-white border border-slate-100 rounded-2xl p-3 flex justify-between items-center shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-full bg-slate-100 text-slate-700">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-900">Party</p>
+                            <p class="text-[10px] text-slate-400">First miner activated</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold text-emerald-600">+$0.010</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-emerald-50/90 backdrop-blur-md border-t border-emerald-100/60 p-2 z-40">
+        <div class="flex justify-around items-center">
+            <button onclick="switchTab('miners')" id="nav-miners" class="flex flex-col items-center py-1.5 px-4 rounded-2xl text-blue-700 bg-blue-100/70 font-bold transition">
+                <i data-lucide="car" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[10px]">Miners</span>
+            </button>
+            <button onclick="switchTab('tasks')" id="nav-tasks" class="flex flex-col items-center py-1.5 px-4 rounded-2xl text-slate-500 font-medium hover:text-slate-800 transition">
+                <i data-lucide="list-checks" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[10px]">Tasks</span>
+            </button>
+            <button onclick="switchTab('wallet')" id="nav-wallet" class="flex flex-col items-center py-1.5 px-4 rounded-2xl text-slate-500 font-medium hover:text-slate-800 transition">
+                <i data-lucide="wallet" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[10px]">Wallet</span>
+            </button>
+            <button onclick="switchTab('friends')" id="nav-friends" class="flex flex-col items-center py-1.5 px-4 rounded-2xl text-slate-500 font-medium hover:text-slate-800 transition">
+                <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[10px]">Friends</span>
+            </button>
+        </div>
+        <div class="text-center mt-1">
+            <span class="text-[9px] text-slate-400 tracking-wider">@Broncochris_bot</span>
+        </div>
+    </nav>
+
+    <!-- ================= MODALS ================= -->
+    
+    <!-- WALLET / TOP-UP MODAL -->
+    <div id="modal-topup" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end justify-center hidden">
+        <div class="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom duration-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900">Top Up Balance</h3>
+                <button onclick="closeModals()" class="p-1 rounded-full bg-slate-100 text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-slate-500">Enter deposit amount (USD equivalent in Crypto):</p>
+            <input type="number" id="topup-amount" value="10" min="1" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 font-bold" />
+            <button onclick="confirmTopUp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-sm transition">Confirm Deposit</button>
+        </div>
+    </div>
+
+    <!-- WITHDRAW MODAL -->
+    <div id="modal-withdraw" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end justify-center hidden">
+        <div class="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom duration-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900">Withdraw Funds</h3>
+                <button onclick="closeModals()" class="p-1 rounded-full bg-slate-100 text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 block mb-1">TRC20 / TON Wallet Address:</label>
+                <input type="text" placeholder="e.g. T9xP...4kL9" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 font-mono" />
+            </div>
+            <div>
+                <label class="text-xs text-slate-500 block mb-1">Amount ($ USD):</label>
+                <input type="number" id="withdraw-amount" value="5" min="1" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 font-bold" />
+            </div>
+            <button onclick="confirmWithdraw()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm transition">Request Payout</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // State Management
+        let appState = {
+            balance: 0.00,
+            dailyRate: 0.15,
+            activeMinersCount: 1,
+            totalPackages: 10,
+            totalMined: 0.9848,
+            unclaimed: 0.0000,
+            invitedCount: 2,
+            qualifiedCount: 2,
+            refEarned: 0.020,
+            activeTab: 'miners'
+        };
+
+        // Car Shop Inventory Data
+        const carsData = [
+            {
+                id: '01',
+                name: 'Terragon',
+                type: 'Compact · Silver',
+                rarity: 'Common',
+                dailyIncome: 0.15,
+                price: 1.00,
+                img: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=400&auto=format&fit=crop&q=80',
+                active: true
+            },
+            {
+                id: '02',
+                name: 'Verdant',
+                type: 'Sport Sedan · Green',
+                rarity: 'Common',
+                dailyIncome: 1.00,
+                price: 3.00,
+                img: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&auto=format&fit=crop&q=80',
+                active: false
+            },
+            {
+                id: '03',
+                name: 'Marina',
+                type: 'Sport Coupe · Blue',
+                rarity: 'Common',
+                dailyIncome: 2.00,
+                price: 5.00,
+                img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&auto=format&fit=crop&q=80',
+                active: false
+            },
+            {
+                id: '04',
+                name: 'Frostveil',
+                type: 'Luxury Sedan · White',
+                rarity: 'Rare',
+                dailyIncome: 4.00,
+                price: 10.00,
+                img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=400&auto=format&fit=crop&q=80',
+                active: false
+            },
+            {
+                id: '05',
+                name: 'Tempest',
+                type: 'Grand Tourer · Red',
+                rarity: 'Rare',
+                dailyIncome: 10.00,
+                price: 20.00,
+                img: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?w=400&auto=format&fit=crop&q=80',
+                active: false
+            },
+            {
+                id: '06',
+                name: 'Obsidian',
+                type: 'Performance SUV · Black',
+                rarity: 'Epic',
+                dailyIncome: 30.00,
+                price: 50.00,
+                img: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&auto=format&fit=crop&q=80',
+                active: false
+            },
+            {
+                id: '07',
+                name: 'Voltaris',
+                type: 'Supercar · Yellow',
+                rarity: 'Epic',
+                dailyIncome: 60.00,
+                price: 100.00,
+                img: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=400&auto=format&fit=crop&q=80',
+                active: false
+            },
+            {
+                id: '08',
+                name: 'Prisma',
+                type: 'Exotic Coupe · Violet',
+                rarity: 'Epic',
+                dailyIncome: 125.00,
+                price: 200.00,
+                img: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?w=400&auto=format&fit=crop&q=80',
+                active: false
+            }
+        ];
+
+        // Tasks Inventory Data
+        let tasksData = [
+            { id: 1, title: 'MONSTERSMAFIABOT', reward: 0.10, status: 'available' },
+            { id: 2, title: 'Official channel', reward: 0.05, status: 'available' },
+            { id: 3, title: 'Join Community Chat', reward: 0.05, status: 'available' },
+            { id: 4, title: 'VictorEmpireBot', reward: 0.15, status: 'available' }
+        ];
+
+        // Initial setup on Window Load
+        window.onload = () => {
+            lucide.createIcons();
+            renderCars();
+            renderTasks();
+            updateUI();
+            
+            // Continuous Passive Mining Engine (Ticks every 1 sec)
+            setInterval(() => {
+                const perSecondRate = appState.dailyRate / 86400;
+                appState.unclaimed += perSecondRate;
+                appState.totalMined += perSecondRate;
+                
+                // Update UI elements smoothly
+                document.getElementById('unclaimed-amount').innerText = `$${appState.unclaimed.toFixed(4)}`;
+                document.getElementById('stat-total-mined').innerText = appState.totalMined.toFixed(4);
+            }, 1000);
+        };
+
+        // Render Cars Grid
+        function renderCars() {
+            const container = document.getElementById('car-list');
+            container.innerHTML = carsData.map(car => `
+                <div class="bg-white border border-slate-100 p-3 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 font-semibold mb-1">
+                            <span>${car.id}</span>
+                            <span class="bg-slate-100 px-2 py-0.5 rounded-full text-slate-600">${car.rarity}</span>
+                        </div>
+                        <img src="${car.img}" alt="${car.name}" class="w-full h-24 object-cover rounded-xl mb-2" onerror="this.src='https://placehold.co/300x200/e2e8f0/475569?text=Car+Image'" />
+                        <h4 class="font-extrabold text-slate-900 text-sm">${car.name}</h4>
+                        <p class="text-[11px] text-slate-400 font-medium">${car.type}</p>
+                    </div>
+                    
+                    <div class="mt-3 pt-2 border-t border-slate-100">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400 font-medium">Income / day</span>
+                            <span class="font-bold text-slate-800">$${car.dailyIncome.toFixed(2)}</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-[10px] text-slate-400 mt-1">
+                            <i data-lucide="clock" class="w-3 h-3"></i> 30 days
+                        </div>
+                        <div class="text-base font-extrabold text-slate-900 mt-2">$${car.price.toFixed(0)}</div>
+                        <button onclick="activateCar('${car.id}')" 
+                                class="w-full mt-2 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+                                    car.active 
+                                    ? 'bg-emerald-50 border border-emerald-300 text-emerald-700' 
+                                    : 'bg-sky-100 hover:bg-sky-200 text-sky-800 active:scale-95'
+                                }">
+                            ${car.active ? '<i data-lucide="check" class="w-3.5 h-3.5"></i> Active' : 'Activate'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Activate / Buy Car Logic
+        function activateCar(id) {
+            const car = carsData.find(c => c.id === id);
+            if (!car) return;
+
+            if (car.active) {
+                showToast(`Already active!`);
+                return;
+            }
+
+            if (appState.balance < car.price) {
+                showToast(`Insufficient balance! Top up in Wallet tab.`);
+                switchTab('wallet');
+                return;
+            }
+
+            // Deduct funds & Update State
+            appState.balance -= car.price;
+            car.active = true;
+            appState.dailyRate += car.dailyIncome;
+            appState.activeMinersCount += 1;
+
+            updateUI();
+            renderCars();
+            showToast(`Activated ${car.name}! +$${car.dailyIncome}/day`);
+        }
+
+        // Collect Mined Balance
+        function collectMining() {
+            if (appState.unclaimed <= 0) {
+                showToast('No earnings to collect yet!');
+                return;
+            }
+
+            const icon = document.getElementById('collect-icon');
+            icon.classList.add('animate-spin');
+            
+            setTimeout(() => {
+                appState.balance += appState.unclaimed;
+                showToast(`Collected $${appState.unclaimed.toFixed(4)} USD!`);
+                appState.unclaimed = 0;
+                icon.classList.remove('animate-spin');
+                updateUI();
+            }, 400);
+        }
+
+        // Render Tasks
+        function renderTasks(filter = 'all') {
+            const container = document.getElementById('task-list');
+            let filtered = tasksData;
+            if (filter === 'review') filtered = tasksData.filter(t => t.status === 'review');
+            if (filter === 'done') filtered = tasksData.filter(t => t.status === 'done');
+            if (filter === 'all') filtered = tasksData.filter(t => t.status === 'available');
+
+            if(filtered.length === 0) {
+                container.innerHTML = `<div class="text-center text-xs text-slate-400 py-8">No tasks in this category</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => `
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                            <i data-lucide="list-checks" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">${t.title}</p>
+                            <p class="text-xs font-semibold text-blue-600">+$${t.reward.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <button onclick="startTask(${t.id})" class="px-5 py-2 border border-slate-300 rounded-full text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition">
+                        ${t.status === 'available' ? 'Start' : t.status === 'review' ? 'In Review' : 'Claimed'}
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Start Task Action
+        function startTask(id) {
+            const task = tasksData.find(t => t.id === id);
+            if (!task || task.status !== 'available') return;
+
+            task.status = 'review';
+            renderTasks();
+            updateTaskCounters();
+            showToast(`Task started! Reviewing completion...`);
+
+            // Auto approve task after 4 seconds
+            setTimeout(() => {
+                task.status = 'done';
+                appState.balance += task.reward;
+                updateTaskCounters();
+                renderTasks();
+                updateUI();
+                showToast(`Task verified! +$${task.reward.toFixed(2)} added to balance.`);
+            }, 4000);
+        }
+
+        function updateTaskCounters() {
+            document.getElementById('task-avail-count').innerText = tasksData.filter(t => t.status === 'available').length;
+            document.getElementById('task-review-count').innerText = tasksData.filter(t => t.status === 'review').length;
+            document.getElementById('task-done-count').innerText = tasksData.filter(t => t.status === 'done').length;
+        }
+
+        function switchTaskFilter(type) {
+            ['all', 'review', 'done'].forEach(t => {
+                const el = document.getElementById(`task-filter-${t}`);
+                if (t === type) {
+                    el.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-blue-700 border border-blue-600 shadow-sm";
+                } else {
+                    el.className = "px-4 py-1.5 rounded-full text-xs font-bold text-slate-500 hover:bg-slate-100";
+                }
+            });
+            renderTasks(type);
+        }
+
+        // Navigation Switching Logic
+        function switchTab(tabName) {
+            ['miners', 'tasks', 'wallet', 'friends'].forEach(t => {
+                const section = document.getElementById(`tab-${t}`);
+                const navBtn = document.getElementById(`nav-${t}`);
+                
+                if (t === tabName) {
+                    section.classList.remove('hidden');
+                    navBtn.className = "flex flex-col items-center py-1.5 px-4 rounded-2xl text-blue-700 bg-blue-100/70 font-bold transition";
+                } else {
+                    section.classList.add('hidden');
+                    navBtn.className = "flex flex-col items-center py-1.5 px-4 rounded-2xl text-slate-500 font-medium hover:text-slate-800 transition";
+                }
+            });
+            appState.activeTab = tabName;
+        }
+
+        // Modal Controllers
+        function openTopUpModal() { document.getElementById('modal-topup').classList.remove('hidden'); }
+        function openWithdrawModal() { document.getElementById('modal-withdraw').classList.remove('hidden'); }
+        function openWalletModal() { switchTab('wallet'); }
+        function closeModals() {
+            document.getElementById('modal-topup').classList.add('hidden');
+            document.getElementById('modal-withdraw').classList.add('hidden');
+        }
+
+        function confirmTopUp() {
+            const val = parseFloat(document.getElementById('topup-amount').value) || 0;
+            if (val <= 0) return;
+            appState.balance += val;
+            updateUI();
+            closeModals();
+            showToast(`Deposit of $${val.toFixed(2)} USD added!`);
+        }
+
+        function confirmWithdraw() {
+            const val = parseFloat(document.getElementById('withdraw-amount').value) || 0;
+            if (val <= 0) return;
+            if (val > appState.balance) {
+                showToast(`Insufficient balance for withdrawal!`);
+                return;
+            }
+            appState.balance -= val;
+            updateUI();
+            closeModals();
+            showToast(`Withdrawal request of $${val.toFixed(2)} submitted!`);
+        }
+
+        // Clipboard Copy Helper
+        function copyToClipboard(text) {
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showToast(`Copied to clipboard: ${text}`);
+        }
+
+        // UI Refresh Helper
+        function updateUI() {
+            document.getElementById('user-balance').innerText = appState.balance.toFixed(2);
+            document.getElementById('wallet-balance-disp').innerText = appState.balance.toFixed(2);
+            document.getElementById('daily-rate-display').innerText = appState.dailyRate.toFixed(2);
+            document.getElementById('stat-daily-income').innerText = appState.dailyRate.toFixed(2);
+            document.getElementById('stat-active-miners').innerText = appState.activeMinersCount;
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
         }
     </script>
 </body>
